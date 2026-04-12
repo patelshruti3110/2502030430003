@@ -1,49 +1,88 @@
-<!-- <?php
-// Establish database connection
-$conn = mysqli_connect("localhost", "root", "", "shruti");
-if (!$conn) {
-  die("Connection failed: " . mysqli_connect_error());
-}
-
-// Fetch products from database
-$select = mysqli_query($conn, "SELECT * FROM products");
-$grand_total = 0;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  foreach ($_POST['quantity'] as $product_id => $quantity) {
-    $quantity = max(0, intval($quantity));
-    $product_query = mysqli_query($conn, "SELECT price FROM products WHERE id = $product_id");
-    $product = mysqli_fetch_assoc($product_query);
-    $total_price = $product['price'] * $quantity;
-    $grand_total += $total_price;
-    $_POST['total_price'][$product_id] = $total_price;
-  }
-} else {
-  while ($row = mysqli_fetch_assoc($select)) {
-    $grand_total += $row['price'];
-  }
-  mysqli_data_seek($select, 0);
-}
-?> -->
 <?php
 session_start();
 include 'database.php';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+$user_name = $_SESSION['user_name'] ?? 'guest';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['product_id'])) {
+
     $product_id = mysqli_real_escape_string($conn, $_POST['product_id']);
     $product_name = mysqli_real_escape_string($conn, $_POST['product_name']);
     $product_price = mysqli_real_escape_string($conn, $_POST['product_price']);
     $product_image = mysqli_real_escape_string($conn, $_POST['product_image']);
-    $user_name = $_SESSION['user_name']; // Assuming you store the username in the session
+    $check = mysqli_query($conn, "
+        SELECT * FROM cart 
+        WHERE product_id='$product_id' 
+        AND user_name='$user_name'
+    ");
 
-    $query = "INSERT INTO cart (user_name, product_id, product_name, product_price, product_image) VALUES ('$user_name', '$product_id', '$product_name', '$product_price', '$product_image')";
+    if (mysqli_num_rows($check) > 0) {
 
-    if (mysqli_query($conn, $query)) {
-        echo "Product added to cart successfully.";
+        mysqli_query($conn, "
+            UPDATE cart 
+            SET quantity = quantity + 1 
+            WHERE product_id='$product_id' 
+            AND user_name='$user_name'
+        ");
+
     } else {
-        echo "Error: " . mysqli_error($conn);
+
+        mysqli_query($conn, "
+            INSERT INTO cart (user_name, product_id, product_name, product_price, product_image, quantity) 
+            VALUES ('$user_name','$product_id','$product_name','$product_price','$product_image',1)
+        ");
     }
 }
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['quantity'])) {
+
+    foreach ($_POST['quantity'] as $product_id => $qty) {
+
+        $qty = max(1, (int)$qty);
+
+        mysqli_query($conn, "
+            UPDATE cart 
+            SET quantity='$qty' 
+            WHERE product_id='$product_id' 
+            AND user_name='$user_name'
+        ");
+    }
+}
+
+if (isset($_GET['delete'])) {
+    $delete_id = $_GET['delete'];
+
+    mysqli_query($conn, "
+        DELETE FROM cart 
+        WHERE product_id='$delete_id' 
+        AND user_name='$user_name'
+    ");
+
+    header("Location: user_cart.php");
+    exit();
+}
+
+$select = mysqli_query($conn, "
+    SELECT * FROM cart 
+    WHERE user_name='$user_name'
+");
+
+$grand_total = 0;
+$total_quantity = 0;
+
+$cart_items = [];
+
+while ($row = mysqli_fetch_assoc($select)) {
+
+    $subtotal = $row['product_price'] * $row['quantity'];
+
+    $grand_total += $subtotal;
+    $total_quantity += $row['quantity'];
+
+    $row['subtotal'] = $subtotal;
+    $cart_items[] = $row;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -52,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cart</title>
-  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> -->
+  
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -208,18 +247,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
           <form method="POST" action="">
             <div class="card mb-4">
               <div class="card-header py-3">
-                <h5 class="mb-0">Cart - <?php echo mysqli_num_rows($select); ?> items</h5>
+                <h5 class="mb-0">Cart - <?php echo count($cart_items); ?> items</h5>
               </div>
               <div class="card-body">
-                <?php while ($row = mysqli_fetch_assoc($select)) {
-                  $total_price = isset($_POST['total_price'][$row['id']]) ? $_POST['total_price'][$row['id']] : $row['price'];
-                ?>
+                <?php foreach ($cart_items as $row) { ?>
                   <!-- Single item -->
                   <div class="row">
                     <div class="col-lg-3 col-md-12 mb-4 mb-lg-0">
                       <!-- Image -->
                       <div class="bg-image hover-overlay hover-zoom ripple rounded" data-mdb-ripple-color="light">
-                        <img src="uploaded_img/<?php echo htmlspecialchars($row['image']); ?>" class="w-100" alt="<?php echo htmlspecialchars($row['name']); ?>" />
+                        <img src="uploaded_img/<?php echo htmlspecialchars($row['product_image']); ?>" class="w-100" alt="<?php echo htmlspecialchars($row['product_name']); ?>" />
                         <a href="#!">
                           <div class="mask" style="background-color: rgba(251, 251, 251, 0.2)"></div>
                         </a>
@@ -229,10 +266,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                     <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
                       <!-- Data -->
-                      <p><strong><?php echo htmlspecialchars($row['name']); ?></strong></p>
+                      <p><strong><?php echo htmlspecialchars($row['product_name']); ?></strong></p>
                       <div class="d-flex align-items-center mb-4 mt-4">
-                        <a href="product_details.php?id=<?php echo htmlspecialchars($row['id']); ?>" class="btn btn-details btn-danger">Details</a>
-                        <a href="productdtls.php?delete=<?php echo htmlspecialchars($row['id']); ?>" class="btn btn-sm btn-danger">Delete</a>
+                        <!-- <a href="product_details.php?id=<?php echo htmlspecialchars($row['product_id']); ?>" class="btn btn-details btn-danger">Details</a> -->
+                        <a href="user_cart.php?delete=<?php echo htmlspecialchars($row['product_id']); ?>" class="btn btn-sm btn-danger">Delete</a>
                       </div>
                       <!-- Data -->
                     </div>
@@ -241,15 +278,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                       <!-- Quantity -->
                       <div class="d-flex mb-4" style="max-width: 300px">
                         <div class="form-outline">
-                          <input id="quantity-<?php echo $row['id']; ?>" min="0" name="quantity[<?php echo $row['id']; ?>]" value="<?php echo isset($_POST['quantity'][$row['id']]) ? $_POST['quantity'][$row['id']] : 1; ?>" type="number" class="form-control" />
-                          <label class="form-label" for="quantity-<?php echo $row['id']; ?>">Quantity</label>
+                          <input id="quantity-<?php echo $row['product_id']; ?>" min="1" name="quantity[<?php echo $row['product_id']; ?>]" value="<?php echo $row['quantity']; ?>" type="number" class="form-control" />
+                          <label class="form-label" for="quantity-<?php echo $row['product_id']; ?>">Quantity</label>
                         </div>
                       </div>
                       <!-- Quantity -->
 
                       <!-- Price -->
                       <p class="text-start text-md-center">
-                        <strong>₹<?php echo number_format($total_price, 2); ?></strong>
+                        <strong>₹<?php echo number_format($row['subtotal'], 2); ?></strong>
                       </p>
                       <!-- Price -->
                     </div>
@@ -265,20 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="col-md-4">
           <div class="summary-box">
             <h5>Order Summary</h5>
-            <p>Total Quantity: <span id="total-quantity">
-                <?php
-                $total_quantity = 0;
-                if (!empty($_POST['quantity']) && is_array($_POST['quantity'])) {
-                  $total_quantity = array_sum($_POST['quantity']);
-                } else {
-                  while ($row = mysqli_fetch_assoc($select)) {
-                    $total_quantity += 0; // Assuming default quantity is 1 for each item in cart
-                  }
-                  mysqli_data_seek($select, 0);
-                }
-                echo $total_quantity;
-                ?>
-              </span></p>
+            <p>Total Quantity: <span id="total-quantity"><?php echo $total_quantity; ?></span></p>
             <p>Grand Total: ₹<span id="grand-total"><?php echo number_format($grand_total, 2); ?></span></p>
             <div class="d-flex justify-content-between align-items-center mt-3">
               <!-- <a href="wishlist.php" class="btn btn-warning"> -->

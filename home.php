@@ -186,7 +186,7 @@
         ?>
         <div class="hero">
             <h1>IF THE SHOE FITS, BUY IT!</h1>
-            <p>Welcome to Shoe Haven, your ultimate destination for stylish, comfortable, and high-quality footwear.<br>We believe that shopping for shoes should be enjoyable and hassle-free.</p>
+            <p>Welcome to Shoe Heaven, your ultimate destination for stylish, comfortable, and high-quality footwear.<br>We believe that shopping for shoes should be enjoyable and hassle-free.</p>
             <a href="login_form.php" class="btn">Shop Now</a>
         </div>
         <div class="product-list">

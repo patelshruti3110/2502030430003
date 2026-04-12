@@ -9,7 +9,7 @@ if(isset($_POST['submit'])){
    $email = mysqli_real_escape_string($conn, $_POST['email']);
    $pass = md5($_POST['password']);
    $cpass = md5($_POST['cpassword']);
-   $user_type = $_POST['user_type'];
+   // $user_type = $_POST['user_type'];
 
    $select = " SELECT * FROM user_form WHERE email = '$email' && password = '$pass' ";
 
@@ -24,7 +24,7 @@ if(isset($_POST['submit'])){
       if($pass != $cpass){
          $error[] = 'password not matched!';
       }else{
-         $insert = "INSERT INTO user_form(name, email, password, user_type) VALUES('$name','$email','$pass','$user_type')";
+         $insert = "INSERT INTO user_form(name, email, password) VALUES('$name','$email','$pass')";
          mysqli_query($conn, $insert);
          header('location:login_form.php');
       }
@@ -228,13 +228,13 @@ if(isset($_POST['submit'])){
             <label for="cpassword">Confirm Password:</label>
             <input type="password" name="cpassword" id="cpassword" required>
          </div>
-         <div class="form-group">
+         <!-- <div class="form-group">
          <label for="user_type">User Type:</label>
             <select name="user_type" id="user_type" required>
                <option value="user">User</option>
                <option value="admin">Admin</option>
             </select>
-         </div>
+         </div> -->
          <input type="submit" name="submit" value="Register now" class="btn">
          <div class="register-link">
             <p>Already have an account? <a href="login_form.php">Login now</a></p>

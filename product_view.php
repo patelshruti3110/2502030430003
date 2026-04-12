@@ -1,11 +1,51 @@
 <?php
-    include 'navbar.php';
-    include 'database.php'; // Ensure this line is included
-    session_start();
-    if (!isset($_SESSION['user_name'])) { 
+session_start();
+include 'database.php'; // Ensure this line is included
+include 'navbar.php';
+
+if (!isset($_SESSION['user_name'])) { 
     header('location:login_form.php'); 
-} 
-    ?>
+    exit();
+}
+
+$user_name = $_SESSION['user_name'];
+$message = [];
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['product_id'])) {
+
+    $product_id = mysqli_real_escape_string($conn, $_POST['product_id']);
+    $product_name = mysqli_real_escape_string($conn, $_POST['product_name']);
+    $product_price = mysqli_real_escape_string($conn, $_POST['product_price']);
+    $product_image = mysqli_real_escape_string($conn, $_POST['product_image']);
+
+    $check = mysqli_query($conn, "
+        SELECT * FROM cart 
+        WHERE product_id='$product_id' 
+        AND user_name='$user_name'
+    ");
+
+    if (mysqli_num_rows($check) > 0) {
+
+        mysqli_query($conn, "
+            UPDATE cart 
+            SET quantity = quantity + 1 
+            WHERE product_id='$product_id' 
+            AND user_name='$user_name'
+        ");
+
+    } else {
+
+        mysqli_query($conn, "
+            INSERT INTO cart (user_name, product_id, product_name, product_price, product_image, quantity) 
+            VALUES ('$user_name','$product_id','$product_name','$product_price','$product_image',1)
+        ");
+    }
+
+    
+    header("Location: user_cart.php");
+    exit();
+}
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -193,7 +233,6 @@
             $showData = "SELECT * FROM products";
             $showRes = mysqli_query($conn, $showData);
 
-            // Check if the query was successful
             if ($showRes) {
                 while ($fetch = mysqli_fetch_assoc($showRes)) {
                     ?>
@@ -204,7 +243,15 @@
                         <div class="product-details">
                             <h3><?php echo htmlspecialchars($fetch['name']); ?></h3>
                             <p>Rs. <?php echo htmlspecialchars($fetch['price']); ?></p>
-                            <a href="user_cart.php" class="btn btn-add-to-cart" onclick="addToCart(<?php echo htmlspecialchars($fetch['id']); ?>)">Add to Cart</a>
+
+                            <form method="POST" action="" style="display:inline;">
+                                <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($fetch['id']); ?>">
+                                <input type="hidden" name="product_name" value="<?php echo htmlspecialchars($fetch['name']); ?>">
+                                <input type="hidden" name="product_price" value="<?php echo htmlspecialchars($fetch['price']); ?>">
+                                <input type="hidden" name="product_image" value="<?php echo htmlspecialchars($fetch['image']); ?>">
+                                <button type="submit" class="btn btn-add-to-cart">Add to Cart</button>
+                            </form>
+
                         </div>
                     </div>
                     <?php
@@ -215,12 +262,5 @@
             ?>
         </div>
     </div>
-
-    <script>
-        function addToCart(productId) {
-            // Replace this with your add to cart logic, e.g., AJAX request
-            alert('Product added to cart! Product ID: ' + productId);
-        }
-    </script>
 </body>
 </html>

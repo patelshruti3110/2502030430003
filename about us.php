@@ -61,7 +61,7 @@
     <div class="page-wrapper">
         <h1 id="h">About Us</h1>
         <p id="p1">
-            Welcome to Shoe Haven, your ultimate destination for stylish, comfortable, and high-quality footwear. We are passionate about shoes and believe that the right pair can transform your look, elevate your confidence, and make a lasting impression. Our curated collection features a wide range of designs, from trendy sneakers and elegant heels to versatile flats and durable boots, ensuring there's something for every occasion and style.<br><br>
+            Welcome to Shoe Heaven, your ultimate destination for stylish, comfortable, and high-quality footwear. We are passionate about shoes and believe that the right pair can transform your look, elevate your confidence, and make a lasting impression. Our curated collection features a wide range of designs, from trendy sneakers and elegant heels to versatile flats and durable boots, ensuring there's something for every occasion and style.<br><br>
 
             At Shoe Haven, we are committed to providing exceptional customer service and a seamless shopping experience. Our team meticulously selects each pair of shoes, prioritizing quality, craftsmanship, and contemporary design. We believe that shopping for shoes should be enjoyable and hassle-free, which is why we offer easy navigation, secure payment options, and fast shipping.<br><br>
 
