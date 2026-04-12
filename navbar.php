@@ -80,7 +80,7 @@
 
 <nav id="navbar-container">
     <div id="navbar-logo">
-        <img src="shoes store.png" alt="Logo" width="130" height="130" style="border-radius: 50%;">
+        <img src="shoe_logo.png" alt="Logo" width="130" height="130" style="border-radius:0%;">
     </div>
     <div style="width: 80%; display: flex; justify-content: center;">
         <ul id="navbar-links">
